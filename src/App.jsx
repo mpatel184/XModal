@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-
+import React, { useState, useEffect, useRef } from 'react';
 
 function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -10,6 +9,7 @@ function App() {
     dob: ''
   });
   const [errors, setErrors] = useState({});
+  const modalRef = useRef(null);
 
   const handleChange = (e) => {
     const { id, value } = e.target;
@@ -67,36 +67,39 @@ function App() {
     
     if (validateForm()) {
       setIsModalOpen(false);
-      setFormData({
-        username: '',
-        email: '',
-        phone: '',
-        dob: ''
-      });
-      setErrors({});
+      resetForm();
     }
   };
 
+  const resetForm = () => {
+    setFormData({
+      username: '',
+      email: '',
+      phone: '',
+      dob: ''
+    });
+    setErrors({});
+  };
+
   const handleOutsideClick = (e) => {
-    if (e.target.className === 'modal') {
+    if (modalRef.current && e.target === modalRef.current) {
       setIsModalOpen(false);
-      setFormData({
-        username: '',
-        email: '',
-        phone: '',
-        dob: ''
-      });
-      setErrors({});
+      resetForm();
     }
   };
 
   useEffect(() => {
-    if (isModalOpen) {
-      document.addEventListener('click', handleOutsideClick);
-    }
+    const handleGlobalClick = (e) => {
+      if (isModalOpen && !e.target.closest('.modal-content') && !e.target.closest('button')) {
+        setIsModalOpen(false);
+        resetForm();
+      }
+    };
+
+    document.addEventListener('click', handleGlobalClick);
     
     return () => {
-      document.removeEventListener('click', handleOutsideClick);
+      document.removeEventListener('click', handleGlobalClick);
     };
   }, [isModalOpen]);
 
@@ -110,8 +113,8 @@ function App() {
       )}
 
       {isModalOpen && (
-        <div className="modal">
-          <div className="modal-content">
+        <div className="modal" ref={modalRef} onClick={handleOutsideClick}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <form onSubmit={handleSubmit}>
               <h2>User Information Form</h2>
               
